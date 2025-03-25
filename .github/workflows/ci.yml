@@ -1,30 +1,38 @@
-name: CI for Spring Boot
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      - name: Extract Docker image metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          distribution: 'temurin'  # Hoặc 'zulu', 'corretto'
-          java-version: '17'
-          cache: maven  # Cache dependencies
+          images: ${{ vars.DOCKER_USERNAME }}/my-image
 
-      - name: Build with Maven
-        run: mvn clean package
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Run tests
-        run: mvn test
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          provenance: true
+          sbom: true

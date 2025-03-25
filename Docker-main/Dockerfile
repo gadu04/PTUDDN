@@ -1,12 +1,14 @@
-# Sử dụng hình ảnh Maven chính thức để xây dựng ứng dụng
+# Build phase
 FROM maven:3.8.4-openjdk-17 AS build
-WORKDIR /
-COPY . .
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline  # Cài đặt dependencies trước để cache
+COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Sử dụng hình ảnh OpenJDK chính thức để chạy ứng dụng
+# Run phase
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /target/demo-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 9090
 ENTRYPOINT ["java", "-jar", "app.jar"]

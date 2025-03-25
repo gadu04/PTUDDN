@@ -5,40 +5,37 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          logout: true
+          fetch-depth: 0  # Lấy toàn bộ lịch sử để tránh lỗi commit hash
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Extract Docker image metadata
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
         with:
-          images: ${{ secrets.DOCKER_USERNAME }}/my-image
-          tags: |
-            type=raw,value=latest
-            type=ref,event=branch
-            type=sha
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          provenance: true
-          sbom: true
+          context: ./Docker-main  # Chỉ định thư mục chứa Dockerfile
+          file: ./Docker-main/Dockerfile  # Đường dẫn chính xác tới Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/my-image:latest
+            ${{ secrets.DOCKER_USERNAME }}/my-image:${{ github.sha }}
+
+      - name: Image digest
+        run: echo "Docker image digest is ${{ steps.docker_build.outputs.digest }}"

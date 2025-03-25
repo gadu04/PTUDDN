@@ -33,8 +33,8 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
-          context: ./Docker-main  # Thư mục chứa Dockerfile
-          file: ./Docker-main/Dockerfile  # Chỉ định tệp Dockerfile
+          context: ./PTUDNN/Docker-main  # Thư mục chứa Dockerfile
+          file: ./PTUDNN/Docker-main/Dockerfile  # Chỉ định tệp Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/my-image:latest
